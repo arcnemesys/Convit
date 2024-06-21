@@ -4,11 +4,12 @@ use serde_json::Result;
 
 pub enum CurrentScreen {
     Main,
-    EditingCommitType,
-    EditingCommitScope,
-    EditingCommitDescription,
-    EditingCommitBody,
-    EditingCommitFooters,
+    Editing,
+    // EditingCommitType,
+    // EditingCommitScope,
+    // EditingCommitDescription,
+    // EditingCommitBody,
+    // EditingCommitFooters,
     Exiting,
 }
 
