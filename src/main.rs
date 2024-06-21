@@ -1,7 +1,10 @@
-
 #![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
 
-use std::{collections::HashMap, error::Error, io::{self, stdout}};
+use std::{
+    collections::HashMap,
+    error::Error,
+    io::{self, stdout},
+};
 
 use color_eyre::config::HookBuilder;
 use crossterm::{
@@ -45,20 +48,71 @@ impl CommitType {
         let bg_color = NORMAL_ROW_COLOR;
 
         let line = match self {
-            &CommitType::Fix => Line::styled(format!("{:?}: Use when making changes to patch a bug.", self), TEXT_COLOR),
+            &CommitType::Fix => Line::styled(
+                format!("{:?}: Use when making changes to patch a bug.", self),
+                TEXT_COLOR,
+            ),
             &CommitType::Feat => Line::styled(
                 format!("{:?}: Use when adding a new feature.", self),
-                (COMPLETED_TEXT_COLOR, bg_color)
+                (COMPLETED_TEXT_COLOR, bg_color),
             ),
-            &CommitType::Build => Line::styled(format!("{:?}: Use when changing the build system or external dependencies.", self), TEXT_COLOR),
-            &CommitType::Chore => Line::styled(format!("{:?}: Use when making non-functional changes that don't concern the codebase.", self), TEXT_COLOR),
-            &CommitType::Ci => Line::styled(format!("{:?}: Use when changing CI configurations or scripts.", self), TEXT_COLOR),
-            &CommitType::Docs => Line::styled(format!("{:?}: Use when making changes to documentation.", self), TEXT_COLOR),
-            &CommitType::Style => Line::styled(format!("{:?}: Use when making non-semantic changes, such as formatting.", self), TEXT_COLOR),
-            &CommitType::Refactor => Line::styled(format!("{:?}: Use when making changes that don't fix a bug or add a feature.", self), TEXT_COLOR),
-            &CommitType::Revert => Line::styled(format!("{:?}: Use when reverting a previous/prior commit.", self), TEXT_COLOR),
-            &CommitType::Perf => Line::styled(format!("{:?}: Use when making changes to improve performance.", self), TEXT_COLOR),
-            &CommitType::Test => Line::styled(format!("{:?}: Use when adding tests or editing existing ones.", self), TEXT_COLOR),
+            &CommitType::Build => Line::styled(
+                format!(
+                    "{:?}: Use when changing the build system or external dependencies.",
+                    self
+                ),
+                TEXT_COLOR,
+            ),
+            &CommitType::Chore => Line::styled(
+                format!(
+                    "{:?}: Use when making non-functional changes that don't concern the codebase.",
+                    self
+                ),
+                TEXT_COLOR,
+            ),
+            &CommitType::Ci => Line::styled(
+                format!(
+                    "{:?}: Use when changing CI configurations or scripts.",
+                    self
+                ),
+                TEXT_COLOR,
+            ),
+            &CommitType::Docs => Line::styled(
+                format!("{:?}: Use when making changes to documentation.", self),
+                TEXT_COLOR,
+            ),
+            &CommitType::Style => Line::styled(
+                format!(
+                    "{:?}: Use when making non-semantic changes, such as formatting.",
+                    self
+                ),
+                TEXT_COLOR,
+            ),
+            &CommitType::Refactor => Line::styled(
+                format!(
+                    "{:?}: Use when making changes that don't fix a bug or add a feature.",
+                    self
+                ),
+                TEXT_COLOR,
+            ),
+            &CommitType::Revert => Line::styled(
+                format!("{:?}: Use when reverting a previous/prior commit.", self),
+                TEXT_COLOR,
+            ),
+            &CommitType::Perf => Line::styled(
+                format!(
+                    "{:?}: Use when making changes to improve performance.",
+                    self
+                ),
+                TEXT_COLOR,
+            ),
+            &CommitType::Test => Line::styled(
+                format!(
+                    "{:?}: Use when adding tests or editing existing ones.",
+                    self
+                ),
+                TEXT_COLOR,
+            ),
         };
 
         ListItem::new(line).bg(bg_color)
@@ -70,7 +124,6 @@ pub enum CommitFooter {
     BreakingChange,
 }
 
-
 impl<'a> Default for ConventionalCommit<'a> {
     fn default() -> Self {
         Self {
@@ -79,7 +132,7 @@ impl<'a> Default for ConventionalCommit<'a> {
             description: "",
             body: None,
             footers: None,
-            commit_status: CommitStatus::Unready
+            commit_status: CommitStatus::Unready,
         }
     }
 }
@@ -114,7 +167,6 @@ impl<'a> Default for Convit<'a> {
     }
 }
 
-
 const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
 const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
 const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
@@ -131,7 +183,7 @@ enum Status {
 #[derive(Copy, Clone, Debug)]
 pub enum CommitStatus {
     Ready,
-    Unready
+    Unready,
 }
 
 struct TodoItem<'a> {
@@ -147,7 +199,7 @@ pub struct ConventionalCommit<'a> {
     pub description: &'a str,
     pub body: Option<&'a str>,
     pub footers: Option<Vec<&'a str>>,
-    pub commit_status: CommitStatus
+    pub commit_status: CommitStatus,
 }
 #[derive(Debug, Clone)]
 struct StatefulList<'a> {
@@ -335,7 +387,7 @@ impl App<'_> {
             match self.items.items[i] {
                 CommitType::Fix => "✓ DONE: ".to_string(),
                 CommitType::Feat => "TODO: ".to_string(),
-                _ => "Not impl'd yet".to_string()
+                _ => "Not impl'd yet".to_string(),
             }
         } else {
             "Nothing to see here...".to_string()
@@ -372,10 +424,7 @@ impl App<'_> {
 }
 
 fn render_title(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("Convit")
-        .bold()
-        .centered()
-        .render(area, buf);
+    Paragraph::new("Convit").bold().centered().render(area, buf);
 }
 
 fn render_footer(area: Rect, buf: &mut Buffer) {
