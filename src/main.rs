@@ -1,10 +1,21 @@
+//! # [Ratatui] List example
+//!
+//! The latest version of this example is available in the [examples] folder in the repository.
+//!
+//! Please note that the examples are designed to be run against the `main` branch of the Github
+//! repository. This means that you may not be able to compile with the latest release version on
+//! crates.io, or the one that you have installed locally.
+//!
+//! See the [examples readme] for more information on finding examples that match the version of the
+//! library you are using.
+//!
+//! [Ratatui]: https://github.com/ratatui-org/ratatui
+//! [examples]: https://github.com/ratatui-org/ratatui/blob/main/examples
+//! [examples readme]: https://github.com/ratatui-org/ratatui/blob/main/examples/README.md
+
 #![allow(clippy::enum_glob_use, clippy::wildcard_imports)]
 
-use std::{
-    collections::HashMap,
-    error::Error,
-    io::{self, stdout},
-};
+use std::{error::Error, io, io::stdout};
 
 use color_eyre::config::HookBuilder;
 use crossterm::{
@@ -13,159 +24,6 @@ use crossterm::{
     ExecutableCommand,
 };
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
-
-#[derive(Debug, Clone)]
-pub enum CurrentlyEditing {
-    CommitType,
-    CommitScope,
-    CommitDescription,
-    CommitBody,
-    CommitFooters,
-}
-
-// Users should be able to select from a list of commit types,
-// which will spare us having to mutate a string to match it
-// against the enum, to make sure the commit type input
-// is valid.
-
-#[derive(PartialEq, Debug, Clone)]
-pub enum CommitType {
-    Fix,
-    Feat,
-    Build,
-    Chore,
-    Ci,
-    Docs,
-    Style,
-    Refactor,
-    Revert,
-    Perf,
-    Test,
-}
-
-impl CommitType {
-    fn to_list_item(&self, index: usize) -> ListItem {
-        let bg_color = NORMAL_ROW_COLOR;
-
-        let line = match self {
-            &CommitType::Fix => Line::styled(
-                format!("{:?}: Use when making changes to patch a bug.", self),
-                TEXT_COLOR,
-            ),
-            &CommitType::Feat => Line::styled(
-                format!("{:?}: Use when adding a new feature.", self),
-                (COMPLETED_TEXT_COLOR, bg_color),
-            ),
-            &CommitType::Build => Line::styled(
-                format!(
-                    "{:?}: Use when changing the build system or external dependencies.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Chore => Line::styled(
-                format!(
-                    "{:?}: Use when making non-functional changes that don't concern the codebase.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Ci => Line::styled(
-                format!(
-                    "{:?}: Use when changing CI configurations or scripts.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Docs => Line::styled(
-                format!("{:?}: Use when making changes to documentation.", self),
-                TEXT_COLOR,
-            ),
-            &CommitType::Style => Line::styled(
-                format!(
-                    "{:?}: Use when making non-semantic changes, such as formatting.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Refactor => Line::styled(
-                format!(
-                    "{:?}: Use when making changes that don't fix a bug or add a feature.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Revert => Line::styled(
-                format!("{:?}: Use when reverting a previous/prior commit.", self),
-                TEXT_COLOR,
-            ),
-            &CommitType::Perf => Line::styled(
-                format!(
-                    "{:?}: Use when making changes to improve performance.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Test => Line::styled(
-                format!(
-                    "{:?}: Use when adding tests or editing existing ones.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-        };
-
-        ListItem::new(line).bg(bg_color)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum CommitFooter {
-    BreakingChange,
-}
-
-impl<'a> Default for ConventionalCommit<'a> {
-    fn default() -> Self {
-        Self {
-            commit_type: "",
-            scope: None,
-            description: "",
-            body: None,
-            footers: None,
-            commit_status: CommitStatus::Unready,
-        }
-    }
-}
-
-impl<'a> ConventionalCommit<'a> {
-    fn new() -> Self {
-        ConventionalCommit::default()
-    }
-}
-#[derive(Debug, Clone)]
-pub struct Convit<'a> {
-    pub conventional_commit: ConventionalCommit<'a>,
-    pub commit_type_input: &'a str,
-    pub commit_scope: Option<&'a str>,
-    pub commit_description: &'a str,
-    pub commit_body: Option<&'a str>,
-    pub commit_footers: Option<HashMap<CommitFooter, &'a str>>,
-    pub currently_editing: Option<CurrentlyEditing>,
-}
-
-impl<'a> Default for Convit<'a> {
-    fn default() -> Self {
-        Self {
-            conventional_commit: ConventionalCommit::default(),
-            commit_type_input: "",
-            commit_scope: None,
-            commit_description: "",
-            commit_body: None,
-            commit_footers: None,
-            currently_editing: None,
-        }
-    }
-}
 
 const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
 const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
@@ -180,35 +38,24 @@ enum Status {
     Completed,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum CommitStatus {
-    Ready,
-    Unready,
-}
-
 struct TodoItem<'a> {
     todo: &'a str,
     info: &'a str,
     status: Status,
 }
 
-#[derive(Debug, Clone)]
-pub struct ConventionalCommit<'a> {
-    pub commit_type: &'a str,
-    pub scope: Option<&'a str>,
-    pub description: &'a str,
-    pub body: Option<&'a str>,
-    pub footers: Option<Vec<&'a str>>,
-    pub commit_status: CommitStatus,
-}
-#[derive(Debug, Clone)]
 struct StatefulList<'a> {
     state: ListState,
-    commit: ConventionalCommit<'a>,
-    items: Vec<CommitType>,
+    items: Vec<TodoItem<'a>>,
     last_selected: Option<usize>,
 }
-#[derive(Debug, Clone)]
+
+/// This struct holds the current state of the app. In particular, it has the `items` field which is
+/// a wrapper around `ListState`. Keeping track of the items state let us render the associated
+/// widget with its state and have access to features such as natural scrolling.
+///
+/// Check the event handling at the bottom to see how to change the state on incoming events.
+/// Check the drawing logic for items on how to specify the highlighting style for selected items.
 struct App<'a> {
     items: StatefulList<'a>,
 }
@@ -258,18 +105,24 @@ fn restore_terminal() -> color_eyre::Result<()> {
 impl<'a> App<'a> {
     fn new() -> Self {
         Self {
-            items: StatefulList::with_items(vec![
-                CommitType::Fix,
-                CommitType::Feat,
-                CommitType::Build,
-                CommitType::Chore,
-                CommitType::Ci,
-                CommitType::Docs,
-                CommitType::Style,
-                CommitType::Refactor,
-                CommitType::Perf,
-                CommitType::Test,
+            items: StatefulList::with_items([
+                ("Rewrite everything with Rust!", "I can't hold my inner voice. He tells me to rewrite the complete universe with Rust", Status::Todo),
+                ("Rewrite all of your tui apps with Ratatui", "Yes, you heard that right. Go and replace your tui with Ratatui.", Status::Completed),
+                ("Pet your cat", "Minnak loves to be pet by you! Don't forget to pet and give some treats!", Status::Todo),
+                ("Walk with your dog", "Max is bored, go walk with him!", Status::Todo),
+                ("Pay the bills", "Pay the train subscription!!!", Status::Completed),
+                ("Refactor list example", "If you see this info that means I completed this task!", Status::Completed),
             ]),
+        }
+    }
+
+    /// Changes the status of the selected list item
+    fn change_status(&mut self) {
+        if let Some(i) = self.items.state.selected() {
+            self.items.items[i].status = match self.items.items[i].status {
+                Status::Completed => Status::Todo,
+                Status::Todo => Status::Completed,
+            }
         }
     }
 
@@ -295,7 +148,7 @@ impl App<'_> {
                         Char('h') | Left => self.items.unselect(),
                         Char('j') | Down => self.items.next(),
                         Char('k') | Up => self.items.previous(),
-                        // Char('l') | Right | Enter => self.change_status(),
+                        Char('l') | Right | Enter => self.change_status(),
                         Char('g') => self.go_top(),
                         Char('G') => self.go_bottom(),
                         _ => {}
@@ -339,7 +192,7 @@ impl App<'_> {
         let outer_block = Block::new()
             .borders(Borders::NONE)
             .title_alignment(Alignment::Center)
-            .title("Commit Type")
+            .title("TODO List")
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG);
         let inner_block = Block::new()
@@ -360,7 +213,7 @@ impl App<'_> {
             .items
             .iter()
             .enumerate()
-            .map(|(i, commit_type)| commit_type.to_list_item(i))
+            .map(|(i, todo_item)| todo_item.to_list_item(i))
             .collect();
 
         // Create a List from all list items and highlight the currently selected one
@@ -384,10 +237,9 @@ impl App<'_> {
     fn render_info(&self, area: Rect, buf: &mut Buffer) {
         // We get the info depending on the item's state.
         let info = if let Some(i) = self.items.state.selected() {
-            match self.items.items[i] {
-                CommitType::Fix => "✓ DONE: ".to_string(),
-                CommitType::Feat => "TODO: ".to_string(),
-                _ => "Not impl'd yet".to_string(),
+            match self.items.items[i].status {
+                Status::Completed => "✓ DONE: ".to_string() + self.items.items[i].info,
+                Status::Todo => "TODO: ".to_string() + self.items.items[i].info,
             }
         } else {
             "Nothing to see here...".to_string()
@@ -397,7 +249,7 @@ impl App<'_> {
         let outer_info_block = Block::new()
             .borders(Borders::NONE)
             .title_alignment(Alignment::Center)
-            .title("Composed Commit")
+            .title("TODO Info")
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG);
         let inner_info_block = Block::new()
@@ -424,7 +276,10 @@ impl App<'_> {
 }
 
 fn render_title(area: Rect, buf: &mut Buffer) {
-    Paragraph::new("Convit").bold().centered().render(area, buf);
+    Paragraph::new("Ratatui List Example")
+        .bold()
+        .centered()
+        .render(area, buf);
 }
 
 fn render_footer(area: Rect, buf: &mut Buffer) {
@@ -434,11 +289,10 @@ fn render_footer(area: Rect, buf: &mut Buffer) {
 }
 
 impl StatefulList<'_> {
-    fn with_items<'a>(items: Vec<CommitType>) -> StatefulList<'a> {
+    fn with_items<'a>(items: [(&'a str, &'a str, Status); 6]) -> StatefulList<'a> {
         StatefulList {
             state: ListState::default(),
-            commit: ConventionalCommit::new(),
-            items,
+            items: items.iter().map(TodoItem::from).collect(),
             last_selected: None,
         }
     }
@@ -476,5 +330,33 @@ impl StatefulList<'_> {
         self.last_selected = self.state.selected();
         self.state.select(None);
         *self.state.offset_mut() = offset;
+    }
+}
+
+impl TodoItem<'_> {
+    fn to_list_item(&self, index: usize) -> ListItem {
+        let bg_color = match index % 2 {
+            0 => NORMAL_ROW_COLOR,
+            _ => ALT_ROW_COLOR,
+        };
+        let line = match self.status {
+            Status::Todo => Line::styled(format!(" ☐ {}", self.todo), TEXT_COLOR),
+            Status::Completed => Line::styled(
+                format!(" ✓ {}", self.todo),
+                (COMPLETED_TEXT_COLOR, bg_color),
+            ),
+        };
+
+        ListItem::new(line).bg(bg_color)
+    }
+}
+
+impl<'a> From<&(&'a str, &'a str, Status)> for TodoItem<'a> {
+    fn from((todo, info, status): &(&'a str, &'a str, Status)) -> Self {
+        Self {
+            todo,
+            info,
+            status: *status,
+        }
     }
 }
