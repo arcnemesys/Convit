@@ -29,13 +29,13 @@ pub enum CurrentlyEditing {
 }
 
 #[derive(Debug, Clone)]
-struct StatefulList {
+pub struct StatefulList {
     state: ListState,
     commit_items: Vec<CommitType>,
     last_selected: Option<usize>,
 }
 impl StatefulList {
- fn with_items(commit_items: Vec<CommitType>) -> StatefulList {
+ pub fn with_items(commit_items: Vec<CommitType>) -> StatefulList {
      StatefulList {
          state: ListState::default(),
          commit_items,
@@ -43,7 +43,7 @@ impl StatefulList {
      }
  }
 
- fn next(&mut self) {
+ pub fn next(&mut self) {
      let i = match self.state.selected() {
          Some(i) => {
              if i >= self.commit_items.len() - 1 {
@@ -57,7 +57,7 @@ impl StatefulList {
      self.state.select(Some(i));
  }
 
- fn previous(&mut self) {
+ pub fn previous(&mut self) {
      let i = match self.state.selected() {
          Some(i) => {
              if i == 0 {
@@ -71,7 +71,7 @@ impl StatefulList {
      self.state.select(Some(i));
  }
 
- fn unselect(&mut self) {
+ pub fn unselect(&mut self) {
      let offset = self.state.offset();
      self.last_selected = self.state.selected();
      self.state.select(None);
@@ -80,8 +80,9 @@ impl StatefulList {
 }
 
 #[derive(Debug, Clone)]
-struct App {
-    items: StatefulList,
+pub struct App {
+    pub items: StatefulList,
+    pub running: bool,
 }
 
 impl App {
@@ -99,14 +100,18 @@ impl App {
              CommitType::Perf,
              CommitType::Test,
          ]),
+         running: true
      }
  }
 
- fn go_top(&mut self) {
+ pub fn quit(&mut self) {
+  self.running = false;
+ }
+ pub fn go_top(&mut self) {
      self.items.state.select(Some(0));
  }
 
- fn go_bottom(&mut self) {
+ pub fn go_bottom(&mut self) {
      self.items.state.select(Some(self.items.commit_items.len() - 1));
  }
 }
