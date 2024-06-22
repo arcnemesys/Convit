@@ -7,8 +7,6 @@ use std::time::{Duration, Instant};
 /// Terminal events.
 #[derive(Clone, Copy, Debug)]
 pub enum Event {
-    /// Terminal tick.
-    Tick,
     /// Key press.
     Key(KeyEvent),
     /// Mouse click/scroll.
@@ -63,10 +61,6 @@ impl EventHandler {
                         .expect("failed to send terminal event")
                     }
 
-                    if last_tick.elapsed() >= tick_rate {
-                        sender.send(Event::Tick).expect("failed to send tick event");
-                        last_tick = Instant::now();
-                    }
                 }
             })
         };

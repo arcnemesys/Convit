@@ -46,4 +46,16 @@ impl<B: Backend> Tui<B> {
         stdout().execute(LeaveAlternateScreen)?;
         Ok(())
        }
+
+    pub fn draw(&mut self, app: &mut App) -> AppResult<()> {
+        self.terminal.draw(|frame| ui::render(app, frame))?;
+        Ok(())
+    }
+
+    pub fn reset() -> AppResult<()> {
+        terminal::disable_raw_mode()?;
+        crossterm::execute!(io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
+
+        Ok(())
+    }
 }

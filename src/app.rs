@@ -10,12 +10,12 @@ use std::io;
 use ratatui::{prelude::*, widgets::*};
 
 
-const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
-const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
-const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
-const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
-const TEXT_COLOR: Color = tailwind::SLATE.c200;
-const COMPLETED_TEXT_COLOR: Color = tailwind::GREEN.c500;
+pub const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
+pub const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
+pub const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
+pub const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
+pub const TEXT_COLOR: Color = tailwind::SLATE.c200;
+pub const COMPLETED_TEXT_COLOR: Color = tailwind::GREEN.c500;
 
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
@@ -30,9 +30,9 @@ pub enum CurrentlyEditing {
 
 #[derive(Debug, Clone)]
 pub struct StatefulList {
-    state: ListState,
-    commit_items: Vec<CommitType>,
-    last_selected: Option<usize>,
+    pub state: ListState,
+    pub commit_items: Vec<CommitType>,
+    pub last_selected: Option<usize>,
 }
 impl StatefulList {
  pub fn with_items(commit_items: Vec<CommitType>) -> StatefulList {
@@ -86,7 +86,7 @@ pub struct App {
 }
 
 impl App {
- fn new() -> Self {
+ pub fn new() -> Self {
      Self {
          items: StatefulList::with_items(vec![
              CommitType::Fix,
@@ -423,7 +423,7 @@ pub enum CommitType {
 }
 
 impl CommitType {
- fn to_list_item(&self, index: usize) -> ListItem {
+ pub fn to_list_item(&self, index: usize) -> ListItem {
      let bg_color = NORMAL_ROW_COLOR;
 
      let line = match self {
