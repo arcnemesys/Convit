@@ -41,7 +41,7 @@ impl<B: Backend> Tui<B> {
         Ok(())
     }
 
-    fn restore_terminal(&self) -> color_eyre::Result<()> {
+    pub fn restore_terminal(&self) -> color_eyre::Result<()> {
         disable_raw_mode()?;
         stdout().execute(LeaveAlternateScreen)?;
         Ok(())
