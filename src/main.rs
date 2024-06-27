@@ -468,12 +468,20 @@ impl Widget for &mut App<'_> {
         let vertical = Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]);
         let [upper_item_list_area, lower_item_list_area] = vertical.areas(rest_area);
 
-        let vertical_half = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
-        let [commit_types_area, commit_footers_area] = vertical_half.areas(upper_item_list_area);
+        let upper_half = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
+    
+        let [commit_types_area, commit_footers_area] = upper_half.areas(upper_item_list_area);
+
+        let bottom_half = Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]);
+
+        let [commit_type_info, commit_message] = bottom_half.areas(lower_item_list_area);
+
+
         render_title(header_area, buf);
         self.render_todo(commit_types_area, buf);
         self.render_commit_footers(commit_footers_area, buf);
-        self.render_info(lower_item_list_area, buf);
+        self.render_info(commit_type_info, buf);
+        self.render_commit_message(commit_message, buf);
         render_footer(footer_area, buf);
     }
 }
@@ -482,7 +490,7 @@ impl App<'_> {
     fn render_todo(&mut self, area: Rect, buf: &mut Buffer) {
         // We create two blocks, one is for the header (outer) and the other is for list (inner).
         let outer_block = Block::new()
-            .borders(Borders::NONE)
+            .borders(Borders::ALL)
             .title_alignment(Alignment::Center)
             .title("Commit Type")
             .fg(TEXT_COLOR)
@@ -540,9 +548,9 @@ impl App<'_> {
 
         // We show the list item's info under the list in this paragraph
         let outer_info_block = Block::new()
-            .borders(Borders::NONE)
+            .borders(Borders::ALL)
             .title_alignment(Alignment::Center)
-            .title("Composed Commit")
+            .title("Commit Message")
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG);
         let inner_info_block = Block::new()
@@ -567,12 +575,53 @@ impl App<'_> {
         info_paragraph.render(inner_info_area, buf);
     }
 
+    fn render_commit_message(&self, area: Rect, buf: &mut Buffer) {
+        // We get the info depending on the item's state.
+        // let info = if let Some(i) = self.items.state.selected() {
+        //     match self.items.items[i] {
+        //         CommitType::Fix => "✓ DONE: ".to_string(),
+        //         CommitType::Feat => "TODO: ".to_string(),
+        //         _ => "Not impl'd yet".to_string(),
+        //     }
+        // } else {
+        //     "Nothing to see here...".to_string()
+        // };
+
+        // We show the list item's info under the list in this paragraph
+        let outer_info_block = Block::new()
+            .borders(Borders::ALL)
+            .title_alignment(Alignment::Center)
+            .title("Composed Commit")
+            .fg(TEXT_COLOR)
+            .bg(TODO_HEADER_BG);
+        let inner_info_block = Block::new()
+            .borders(Borders::NONE)
+            .padding(Padding::horizontal(1))
+            .bg(NORMAL_ROW_COLOR);
+
+        // This is a similar process to what we did for list. outer_info_area will be used for
+        // header inner_info_area will be used for the list info.
+        let outer_info_area = area;
+        let inner_info_area = outer_info_block.inner(outer_info_area);
+
+        // We can render the header. Inner info will be rendered later
+        outer_info_block.render(outer_info_area, buf);
+
+        let info_paragraph = Paragraph::new("Your commit here...")
+            .block(inner_info_block)
+            .fg(TEXT_COLOR)
+            .wrap(Wrap { trim: false });
+
+        // We can now render the item info
+        info_paragraph.render(inner_info_area, buf);
+    }
+
     fn render_commit_footers(&mut self, area: Rect, buf: &mut Buffer) {
         // We create two blocks, one is for the header (outer) and the other is for list (inner).
         let outer_block = Block::new()
-            .borders(Borders::NONE)
+            .borders(Borders::ALL)
             .title_alignment(Alignment::Center)
-            .title("Commit Type")
+            .title("Commit Footers")
             .fg(TEXT_COLOR)
             .bg(TODO_HEADER_BG);
         let inner_block = Block::new()
