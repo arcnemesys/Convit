@@ -14,381 +14,36 @@ use crossterm::{
 };
 use ratatui::{prelude::*, style::palette::tailwind, widgets::*};
 use tui_textarea::{Input, Key, TextArea};
+use convit::ui::*;
+use convit::types::*;
 
-pub enum CurrentScreen {
-    Main,
-    Editing,
-    Exiting,
-}
-#[derive(Debug, Clone)]
-pub enum CurrentlyEditing {
-    CommitType,
-    CommitScope,
-    CommitDescription,
-    CommitBody,
-    CommitFooters,
-}
 
-// Users should be able to select from a list of commit types,
-// which will spare us having to mutate a string to match it
-// against the enum, to make sure the commit type input
-// is valid.
-
-#[derive(PartialEq, Debug, Clone)]
-pub enum CommitType {
-    Fix,
-    Feat,
-    Build,
-    Chore,
-    Ci,
-    Docs,
-    Style,
-    Refactor,
-    Revert,
-    Perf,
-    Test,
-}
 
 #[derive(Debug, Clone)]
-pub enum CommitFooters {
-    BreakingChange,
-    SignedOffBy,
-    AckedBy,
-    HelpedBy,
-    ReferenceTo,
-    SeeAlso,
-    Fixes,
-    Cc,
-    ReviewedBy,
-}
-
-impl CommitFooters {
-    fn to_list_item(&self, index: usize) -> ListItem {
-        let bg_color = NORMAL_ROW_COLOR;
-
-        let line = match self {
-            &CommitFooters::BreakingChange => Line::styled(
-                format!("{:?}: Use when making changes to patch a bug.", self),
-                TEXT_COLOR,
-            ),
-            &CommitFooters::SignedOffBy => Line::styled(
-                format!("{:?}: Use when adding a new feature.", self),
-                (COMPLETED_TEXT_COLOR, bg_color),
-            ),
-            &CommitFooters::AckedBy => Line::styled(
-                format!(
-                    "{:?}: Use when changing the build system or external dependencies.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitFooters::HelpedBy => Line::styled(
-                format!(
-                    "{:?}: Use when making non-functional changes that don't concern the codebase.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitFooters::ReferenceTo => Line::styled(
-                format!(
-                    "{:?}: Use when changing CI configurations or scripts.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitFooters::SeeAlso => Line::styled(
-                format!("{:?}: Use when making changes to documentation.", self),
-                TEXT_COLOR,
-            ),
-            &CommitFooters::Fixes => Line::styled(
-                format!(
-                    "{:?}: Use when making non-semantic changes, such as formatting.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitFooters::Cc => Line::styled(
-                format!(
-                    "{:?}: Use when making changes that don't fix a bug or add a feature.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitFooters::ReviewedBy => Line::styled(
-                format!("{:?}: Use when reverting a previous/prior commit.", self),
-                TEXT_COLOR,
-            ),
-        };
-
-        ListItem::new(line).bg(bg_color)
-    }
-}
-
-impl CommitType {
-    fn to_list_item(&self, index: usize) -> ListItem {
-        let bg_color = NORMAL_ROW_COLOR;
-
-        let line = match self {
-            &CommitType::Fix => Line::styled(
-                format!("{:?}: Use when making changes to patch a bug.", self),
-                TEXT_COLOR,
-            ),
-            &CommitType::Feat => Line::styled(
-                format!("{:?}: Use when adding a new feature.", self),
-                (COMPLETED_TEXT_COLOR, bg_color),
-            ),
-            &CommitType::Build => Line::styled(
-                format!(
-                    "{:?}: Use when changing the build system or external dependencies.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Chore => Line::styled(
-                format!(
-                    "{:?}: Use when making non-functional changes that don't concern the codebase.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Ci => Line::styled(
-                format!(
-                    "{:?}: Use when changing CI configurations or scripts.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Docs => Line::styled(
-                format!("{:?}: Use when making changes to documentation.", self),
-                TEXT_COLOR,
-            ),
-            &CommitType::Style => Line::styled(
-                format!(
-                    "{:?}: Use when making non-semantic changes, such as formatting.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Refactor => Line::styled(
-                format!(
-                    "{:?}: Use when making changes that don't fix a bug or add a feature.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Revert => Line::styled(
-                format!("{:?}: Use when reverting a previous/prior commit.", self),
-                TEXT_COLOR,
-            ),
-            &CommitType::Perf => Line::styled(
-                format!(
-                    "{:?}: Use when making changes to improve performance.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-            &CommitType::Test => Line::styled(
-                format!(
-                    "{:?}: Use when adding tests or editing existing ones.",
-                    self
-                ),
-                TEXT_COLOR,
-            ),
-        };
-
-        ListItem::new(line).bg(bg_color)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum CommitFooter {
-    BreakingChange,
-}
-
-impl<'a> Default for ConventionalCommit<'a> {
-    fn default() -> Self {
-        Self {
-            commit_type: "",
-            scope: None,
-            description: "",
-            body: None,
-            footers: None,
-            commit_status: CommitStatus::Unready,
-        }
-    }
-}
-
-impl<'a> ConventionalCommit<'a> {
-    fn new() -> Self {
-        ConventionalCommit::default()
-    }
-}
-#[derive(Debug, Clone)]
-pub struct Convit<'a> {
-    pub conventional_commit: ConventionalCommit<'a>,
-    pub commit_type_input: &'a str,
-    pub commit_scope: Option<&'a str>,
-    pub commit_description: &'a str,
-    pub commit_body: Option<&'a str>,
-    pub commit_footers: Option<HashMap<CommitFooter, &'a str>>,
-    pub currently_editing: Option<CurrentlyEditing>,
-}
-
-impl<'a> Default for Convit<'a> {
-    fn default() -> Self {
-        Self {
-            conventional_commit: ConventionalCommit::default(),
-            commit_type_input: "",
-            commit_scope: None,
-            commit_description: "",
-            commit_body: None,
-            commit_footers: None,
-            currently_editing: None,
-        }
-    }
-}
-
-const TODO_HEADER_BG: Color = tailwind::BLUE.c950;
-const NORMAL_ROW_COLOR: Color = tailwind::SLATE.c950;
-const ALT_ROW_COLOR: Color = tailwind::SLATE.c900;
-const SELECTED_STYLE_FG: Color = tailwind::BLUE.c300;
-const TEXT_COLOR: Color = tailwind::SLATE.c200;
-const COMPLETED_TEXT_COLOR: Color = tailwind::GREEN.c500;
-
-#[derive(Copy, Clone, Debug)]
-pub enum CommitStatus {
-    Ready,
-    Unready,
-}
-
-#[derive(Debug, Clone)]
-pub struct ConventionalCommit<'a> {
-    pub commit_type: &'a str,
+struct App<'a> {
+    items: StatefulList<'a>,
+    footer_list: StatefulFooterList<'a>,
+    pub commit_type: CommitType,
     pub scope: Option<&'a str>,
     pub description: &'a str,
     pub body: Option<&'a str>,
     pub footers: Option<Vec<&'a str>>,
     pub commit_status: CommitStatus,
-}
-#[derive(Debug, Clone)]
-struct StatefulList<'a> {
-    state: ListState,
-    commit: ConventionalCommit<'a>,
-    items: Vec<CommitType>,
-    last_selected: Option<usize>,
+    pub currently_editing: CurrentlyEditing,
 }
 
-#[derive(Debug, Clone)]
-struct StatefulFooterList<'a> {
-    state: ListState,
-    commit: ConventionalCommit<'a>,
-    items: Vec<CommitFooters>,
-    last_selected: Option<usize>,
-}
-impl<'a> StatefulFooterList<'a> {
-    fn footer_items(items: Vec<CommitFooters>) -> StatefulFooterList<'a> {
-        StatefulFooterList {
-            state: ListState::default(),
-            commit: ConventionalCommit::new(),
-            items,
-            last_selected: None,
-        }
-    }
-    fn list_footer_items(items: Vec<CommitFooters>) -> StatefulFooterList<'a> {
-        StatefulFooterList {
-            state: ListState::default(),
-            commit: ConventionalCommit::new(),
-            items,
-            last_selected: None,
-        }
-    }
 
-    fn next(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => self.last_selected.unwrap_or(0),
-        };
-        self.state.select(Some(i));
-    }
-
-    fn previous(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.items.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => self.last_selected.unwrap_or(0),
-        };
-        self.state.select(Some(i));
-    }
-
-    fn unselect(&mut self) {
-        let offset = self.state.offset();
-        self.last_selected = self.state.selected();
-        self.state.select(None);
-        *self.state.offset_mut() = offset;
-    }
-}
-#[derive(Debug, Clone)]
-struct App<'a> {
-    items: StatefulList<'a>,
-    footer_list: StatefulFooterList<'a>,
-}
-
-fn main() -> Result<(), Box<dyn Error>> {
-    // setup terminal
-    init_error_hooks()?;
-    let terminal = init_terminal()?;
-
-    // create app and run it
-    App::new().run(terminal)?;
-
-    restore_terminal()?;
-
-    Ok(())
-}
-
-fn init_error_hooks() -> color_eyre::Result<()> {
-    let (panic, error) = HookBuilder::default().into_hooks();
-    let panic = panic.into_panic_hook();
-    let error = error.into_eyre_hook();
-    color_eyre::eyre::set_hook(Box::new(move |e| {
-        let _ = restore_terminal();
-        error(e)
-    }))?;
-    std::panic::set_hook(Box::new(move |info| {
-        let _ = restore_terminal();
-        panic(info);
-    }));
-    Ok(())
-}
-
-fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
-    enable_raw_mode()?;
-    stdout().execute(EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout());
-    let terminal = Terminal::new(backend)?;
-    Ok(terminal)
-}
-
-fn restore_terminal() -> color_eyre::Result<()> {
-    disable_raw_mode()?;
-    stdout().execute(LeaveAlternateScreen)?;
-    Ok(())
-}
 
 impl<'a> App<'a> {
     fn new() -> Self {
         Self {
+            commit_type: CommitType::Fix,
+            scope: None,
+            description: "",
+            body: None,
+            footers: None,
+            commit_status: CommitStatus::Unready,
+            currently_editing: CurrentlyEditing::CommitType,
             items: StatefulList::with_items(vec![
                 CommitType::Fix,
                 CommitType::Feat,
@@ -683,94 +338,47 @@ fn render_commit(area: Rect, buf: &mut Buffer) {
     let outer_info_area = area;
 }
 
-impl StatefulList<'_> {
-    fn with_items<'a>(items: Vec<CommitType>) -> StatefulList<'a> {
-        StatefulList {
-            state: ListState::default(),
-            commit: ConventionalCommit::new(),
-            items,
-            last_selected: None,
-        }
-    }
 
-    fn next(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => self.last_selected.unwrap_or(0),
-        };
-        self.state.select(Some(i));
-    }
 
-    fn previous(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.items.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => self.last_selected.unwrap_or(0),
-        };
-        self.state.select(Some(i));
-    }
 
-    fn unselect(&mut self) {
-        let offset = self.state.offset();
-        self.last_selected = self.state.selected();
-        self.state.select(None);
-        *self.state.offset_mut() = offset;
-    }
+fn init_error_hooks() -> color_eyre::Result<()> {
+    let (panic, error) = HookBuilder::default().into_hooks();
+    let panic = panic.into_panic_hook();
+    let error = error.into_eyre_hook();
+    color_eyre::eyre::set_hook(Box::new(move |e| {
+        let _ = restore_terminal();
+        error(e)
+    }))?;
+    std::panic::set_hook(Box::new(move |info| {
+        let _ = restore_terminal();
+        panic(info);
+    }));
+    Ok(())
 }
 
-// impl StatefulFooterList<'_> {
-//     fn with_footer_items<'a>(items: Vec<CommitFooters>) -> StatefulFooterList<'a> {
-//         StatefulFooterList {
-//             state: ListState::default(),
-//             commit: ConventionalCommit::new(),
-//             items,
-//             last_selected: None,
-//         }
-//     }
+fn init_terminal() -> color_eyre::Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout().execute(EnterAlternateScreen)?;
+    let backend = CrosstermBackend::new(stdout());
+    let terminal = Terminal::new(backend)?;
+    Ok(terminal)
+}
 
-//     fn next(&mut self) {
-//         let i = match self.state.selected() {
-//             Some(i) => {
-//                 if i >= self.items.len() - 1 {
-//                     0
-//                 } else {
-//                     i + 1
-//                 }
-//             }
-//             None => self.last_selected.unwrap_or(0),
-//         };
-//         self.state.select(Some(i));
-//     }
+fn restore_terminal() -> color_eyre::Result<()> {
+    disable_raw_mode()?;
+    stdout().execute(LeaveAlternateScreen)?;
+    Ok(())
+}
 
-//     fn previous(&mut self) {
-//         let i = match self.state.selected() {
-//             Some(i) => {
-//                 if i == 0 {
-//                     self.items.len() - 1
-//                 } else {
-//                     i - 1
-//                 }
-//             }
-//             None => self.last_selected.unwrap_or(0),
-//         };
-//         self.state.select(Some(i));
-//     }
+fn main() -> Result<(), Box<dyn Error>> {
+    // setup terminal
+    init_error_hooks()?;
+    let terminal = init_terminal()?;
 
-//     fn unselect(&mut self) {
-//         let offset = self.state.offset();
-//         self.last_selected = self.state.selected();
-//         self.state.select(None);
-//         *self.state.offset_mut() = offset;
-//     }
-// }
+    // create app and run it
+    App::new().run(terminal)?;
+
+    restore_terminal()?;
+
+    Ok(())
+}
