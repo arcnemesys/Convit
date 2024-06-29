@@ -11,44 +11,6 @@ use crate::ui::*;
 use std::io;
 
 
-#[derive(Debug, Clone, Copy, Default, Display, EnumIter, FromRepr, PartialEq, Eq)]
-pub enum Tab {
-    #[default]
-    CommitType,
-    CommitFooter
-}
-
-impl Tab {
-    fn next(self) -> Self {
-        let current_index = self as usize;
-        let next_index = current_index.saturating_add(1);
-        Self::from_repr(next_index).unwrap_or(self)
-    }
-
-    fn prev(self) -> Self {
-        let current_index = self as usize;
-        let prev_index = current_index.saturating_sub(1);
-        Self::from_repr(prev_index).unwrap_or(self)
-    }
-
-    fn title(self) -> String {
-        match self {
-            Self::CommitType => String::from("Commit Types"),
-            Self::CommitFooter => String::from("Commit Footers")
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct CommitTypeTab {
-    row: usize,
-}
-
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct CommitFooterTab {
-    row: usize,
-}
-
 #[derive(Debug, Clone)]
 pub struct App<'a> {
     items: StatefulList<'a>,
@@ -141,6 +103,34 @@ impl Widget for &mut App<'_> {
 }
 
 impl App<'_> {
+    fn prev(&mut self) {
+        match self.tab {
+            Tab::CommitType => self.commit_footer_tab.prev(),
+            Tab::CommitFooter => self.commit_type_tab.prev_row()
+        }
+    }
+
+    fn next(&mut self) {
+        match self.tab {
+            Tab::CommitType => self.commit_footer_tab.next(),
+            Tab::CommitFooter => self.commit_type_tab.next()
+        }
+    }
+
+    fn prev_tab(&mut self) {
+        self.tab = self.tab.prev();
+    }
+
+    fn next_tab(&mut self) {
+        self.tab = self.tab.next();
+    }
+    fn render_selected_tab(&self, area: Rect, buf: &mut Buffer) {
+        match self.tab {
+            Tab::CommitType => self.commit_footer_tab.render(area, buf),
+            Tab::CommitFooter => self.commit_type_tab.render(area, buf),
+
+        };
+    }
     fn render_todo(&mut self, area: Rect, buf: &mut Buffer) {
         // We create two blocks, one is for the header (outer) and the other is for list (inner).
         let outer_block = Block::new()
@@ -335,4 +325,42 @@ fn render_commit(area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 
     let outer_info_area = area;
+}
+
+#[derive(Debug, Clone, Copy, Default, Display, EnumIter, FromRepr, PartialEq, Eq)]
+pub enum Tab {
+    #[default]
+    CommitType,
+    CommitFooter
+}
+
+impl Tab {
+    fn next(self) -> Self {
+        let current_index = self as usize;
+        let next_index = current_index.saturating_add(1);
+        Self::from_repr(next_index).unwrap_or(self)
+    }
+
+    fn prev(self) -> Self {
+        let current_index = self as usize;
+        let prev_index = current_index.saturating_sub(1);
+        Self::from_repr(prev_index).unwrap_or(self)
+    }
+
+    fn title(self) -> String {
+        match self {
+            Self::CommitType => String::from("Commit Types"),
+            Self::CommitFooter => String::from("Commit Footers")
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct CommitTypeTab {
+    row: usize,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct CommitFooterTab {
+    row: usize,
 }
