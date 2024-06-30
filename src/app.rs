@@ -1,58 +1,167 @@
-use std::collections::HashMap;
+use std::error;
 
+use ratatui::{
+    buffer::Buffer,
+    layout::{Constraint, Direction, Layout, Rect},
+    widgets::{Block, Borders, List, ListItem, Widget},
+};
+
+pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
+
+#[derive(Debug, Clone)]
 pub enum CurrentScreen {
     Main,
     Editing,
     Exiting,
 }
 
+#[derive(Debug, Clone)]
 pub enum CurrentlyEditing {
-    Key,
-    Value,
+    CommitType,
+    CommitFooters,
+    CommitDescription,
+    CommitBody,
+    CommitScope,
 }
 
+#[derive(Copy, Clone, Debug)]
+pub enum CommitStatus {
+    Ready,
+    Unready,
+}
+
+#[derive(Debug, Clone)]
+pub enum CommitType {
+    Fix,
+    Feat,
+    Build,
+    Chore,
+    Ci,
+    Docs,
+    Style,
+    Refactor,
+    Revert,
+    Perf,
+    Test,
+}
+
+#[derive(Debug, Clone)]
+pub enum CommitFooter {
+    BreakingChange,
+    SignedOffBy,
+    AckedBy,
+    HelpedBy,
+    ReferenceTo,
+    SeeAlso,
+    Fixes,
+    Cc,
+    ReviewedBy,
+}
+
+#[derive(Debug, Clone)]
+pub struct ConventionalCommit {
+    pub commit_type: String,
+    pub scope: Option<String>,
+    pub description: String,
+    pub body: Option<String>,
+    pub footers: Option<Vec<String>>,
+}
+impl Default for ConventionalCommit {
+    fn default() -> Self {
+        Self {
+            commit_type: String::new(),
+            scope: None,
+            description: String::new(),
+            body: None,
+            footers: None,
+        }
+    }
+}
+
+impl ConventionalCommit {
+    pub fn new() -> Self {
+        ConventionalCommit::default()
+    }
+}
 pub struct App {
-    pub key_input: String,              // the currently being edited json key.
-    pub value_input: String,            // the currently being edited json value.
-    pub pairs: HashMap<String, String>, // The representation of our key and value pairs with serde Serialize support
-    pub current_screen: CurrentScreen, // the current screen the user is looking at, and will later determine what is rendered.
-    pub currently_editing: Option<CurrentlyEditing>, // the optional state containing which of the key or value pair the user is editing. It is an option, because when the user is not directly editing a key-value pair, this will be set to `None`.
+    pub commit_type: CommitType,
+    pub commit_footers: Option<Vec<CommitFooter>>,
+    pub commit_description: String,
+    pub commit_scope: Option<String>,
+    pub commit_body: Option<String>,
+    pub commit_status: CommitStatus,
+    pub convit: ConventionalCommit,
+    pub current_screen: CurrentScreen,
+    pub currently_editing: Option<CurrentlyEditing>,
 }
 
-impl App {
-    pub fn new() -> App {
-        App {
-            key_input: String::new(),
-            value_input: String::new(),
-            pairs: HashMap::new(),
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            commit_type: CommitType::Fix,
+            commit_footers: None,
+            commit_description: String::new(),
+            commit_scope: None,
+            commit_body: None,
+            commit_status: CommitStatus::Unready,
+            convit: ConventionalCommit::new(),
             current_screen: CurrentScreen::Main,
             currently_editing: None,
         }
     }
+}
 
-    pub fn save_key_value(&mut self) {
-        self.pairs
-            .insert(self.key_input.clone(), self.value_input.clone());
-
-        self.key_input = String::new();
-        self.value_input = String::new();
-        self.currently_editing = None;
+impl App {
+    pub fn new() -> Self {
+        App::default()
     }
 
-    pub fn toggle_editing(&mut self) {
-        if let Some(edit_mode) = &self.currently_editing {
-            match edit_mode {
-                CurrentlyEditing::Key => self.currently_editing = Some(CurrentlyEditing::Value),
-                CurrentlyEditing::Value => self.currently_editing = Some(CurrentlyEditing::Key),
-            };
-        } else {
-            self.currently_editing = Some(CurrentlyEditing::Key);
-        }
+    pub fn save_commit_type(&mut self) {
+        let commit_type = match self.commit_type {
+            CommitType::Fix => String::from("fix"),
+            CommitType::Feat => String::from("feat"),
+            CommitType::Build => String::from("build"),
+            CommitType::Chore => String::from("chore"),
+            CommitType::Ci => String::from("ci"),
+            CommitType::Docs => String::from("docs"),
+            CommitType::Style => String::from("style"),
+            CommitType::Refactor => String::from("refactor"),
+            CommitType::Revert => String::from("revert"),
+            CommitType::Perf => String::from("perf"),
+            CommitType::Test => String::from("test"),
+        };
+
+        self.convit.commit_type = commit_type;
     }
 
-    pub fn print_json(&self) -> serde_json::Result<()> {
-        let output = serde_json::to_string(&self.pairs)?;
-        println!("{}", output);
-        Ok(())
+    fn render_commit_types(&mut self, area: Rect, but: &mut Buffer) {
+        let commit_types = vec!["feat", "fix", "docs", "style", "refactor", "test", "chore"];
+        let commit_items: Vec<ListItem> = commit_types.iter().map(|i| ListItem::new(*i)).collect();
+        let commit_list = List::new(commit_items)
+            .block(Block::default().borders(Borders::ALL).title("Commit Type"));
+    }
+    fn render_commit_footers(&mut self, area: Rect, but: &mut Buffer) { todo!() }
+    fn render_commit_description(&mut self, area: Rect, but: &mut Buffer) { todo!() }
+    fn render_commit_body(&mut self, area: Rect, but: &mut Buffer) { todo!() }
+
+    fn render_commit(&mut self, area: Rect, but: &mut Buffer) { todo!() }
+}
+
+impl Widget for &mut App {
+    fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) {
+        let vertical = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(1)
+            .constraints([
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+            ]);
+
+        let horizontal_chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)]);
     }
 }
