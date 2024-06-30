@@ -1,61 +1,56 @@
 use crate::app::{App, AppResult};
-use crate::event::EventHandler;
 use crate::ui;
-use color_eyre::config::HookBuilder;
-use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
-use crossterm::terminal::{self, disable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen};
-use crossterm::ExecutableCommand;
+// use crate::event::EventHandler;
 use ratatui::backend::Backend;
+use crossterm::event::{DisableMouseCapture, EnableMouseCapture};
+use crossterm::terminal::{self, EnterAlternateScreen, LeaveAlternateScreen};
 use ratatui::Terminal;
-use std::io::{self, stdout};
+use std::io;
 use std::panic;
-
-/// Representation of a terminal user interface
-/// 
-/// It is responsible for setting up the terminal,
-/// initializing the interface, and handling the draw events.
 
 #[derive(Debug)]
 pub struct Tui<B: Backend> {
-    /// Interface to the terminal
     terminal: Terminal<B>,
-    /// Terminal event handler
-    pub events: EventHandler
+    // pub events: EventHandler
 }
 
 impl<B: Backend> Tui<B> {
-    /// Construct new instance of [`Tui`].
-    pub fn new(terminal: Terminal<B>, events: EventHandler) -> Self {
-        Self { terminal, events}
+    pub fn new(terminal: Terminal<B>) -> Self {
+        // Add missing event handler
+        Self { terminal }
     }
 
     pub fn init(&mut self) -> AppResult<()> {
         terminal::enable_raw_mode()?;
-        crossterm::execute!(io::stderr(), EnterAlternateScreen, EnableMouseCapture)?;
-        let (panic, error) = HookBuilder::default().into_hooks();
-        let panic = panic.into_panic_hook();
-        let error = error.into_eyre_hook();
-
+        crossterm::execute!(io::stderr(), 
+        EnterAlternateScreen, 
+        EnableMouseCapture)?;
+        // Define a custom panic hook to reset the terminal properties.
+      // This way, you won't have your terminal messed up if an unexpected error happens.
+        
         self.terminal.hide_cursor()?;
         self.terminal.clear()?;
         Ok(())
-    }
+      }
 
-    pub fn restore_terminal(&self) -> color_eyre::Result<()> {
-        disable_raw_mode()?;
-        stdout().execute(LeaveAlternateScreen)?;
-        Ok(())
-       }
-
-    pub fn draw(&mut self, app: &mut App) -> AppResult<()> {
-        self.terminal.draw(|frame| ui::render(app, frame))?;
+      pub fn draw(&mut self, app: &mut App) -> AppResult<()> {
+        self.terminal.draw(|frame| frame.render_widget(app, frame.size()))?;
         Ok(())
     }
 
-    pub fn reset() -> AppResult<()> {
+    fn reset(&mut self) -> AppResult<()> {
         terminal::disable_raw_mode()?;
-        crossterm::execute!(io::stderr(), LeaveAlternateScreen, DisableMouseCapture)?;
+        crossterm::execute!(
+          io::stderr(),
+          LeaveAlternateScreen,
+          DisableMouseCapture
+      )?;
+      Ok(())
+      }
 
+      pub fn exit(&mut self) -> AppResult<()> {
+        self.reset()?;
+        self.terminal.show_cursor()?;
         Ok(())
-    }
-}
+      }
+      }
