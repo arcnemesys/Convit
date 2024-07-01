@@ -1,14 +1,6 @@
-/// Application.
+/// Application state and logic.
 pub mod app;
-
-// /// Terminal events handler.
-// pub mod event;
-
-// /// Event handler.
-// pub mod handler;
-
-// /// Terminal user interface.
-// pub mod tui;
-
-/// Widget renderer.
+/// Renders widgets and ui.
 pub mod ui;
+/// Handles initializing and exiting terminal interface.
+pub mod tui;

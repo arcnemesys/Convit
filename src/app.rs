@@ -1,9 +1,7 @@
 use std::error;
 
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, Borders, List, ListItem, Widget},
+    buffer::Buffer, layout::{Constraint, Direction, Layout, Rect}, text::Text, widgets::{Block, Borders, List, ListItem, Paragraph, Widget}
 };
 
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
@@ -93,6 +91,7 @@ pub struct App {
     pub convit: ConventionalCommit,
     pub current_screen: CurrentScreen,
     pub currently_editing: Option<CurrentlyEditing>,
+    pub running: bool,
 }
 
 impl Default for App {
@@ -107,6 +106,7 @@ impl Default for App {
             convit: ConventionalCommit::new(),
             current_screen: CurrentScreen::Main,
             currently_editing: None,
+            running: true,
         }
     }
 }
@@ -140,11 +140,25 @@ impl App {
         let commit_list = List::new(commit_items)
             .block(Block::default().borders(Borders::ALL).title("Commit Type"));
     }
-    fn render_commit_footers(&mut self, area: Rect, but: &mut Buffer) { todo!() }
-    fn render_commit_description(&mut self, area: Rect, but: &mut Buffer) { todo!() }
-    fn render_commit_body(&mut self, area: Rect, but: &mut Buffer) { todo!() }
+    fn render_commit_footers(&mut self, area: Rect, but: &mut Buffer) {
+        let footer_types = vec!["BREAKING CHANGE", "Co-authored-by"];
+        let footer_items: Vec<ListItem> = footer_types.iter().map(|i| ListItem::new(*i)).collect();
+        let footer_list = List::new(footer_items)
+            .block(Block::default().borders(Borders::ALL).title("Footer Type"));
+     }
+    fn render_commit_description(&mut self, area: Rect, but: &mut Buffer) { 
+                let description = Paragraph::new(Text::from("Description"))
+            .block(Block::default().borders(Borders::ALL).title("Description"));
+     }
+    fn render_commit_body(&mut self, area: Rect, but: &mut Buffer) { 
+        let body = Paragraph::new(Text::from("Body"))
+        .block(Block::default().borders(Borders::ALL).title("Body"));
+     }
 
-    fn render_commit(&mut self, area: Rect, but: &mut Buffer) { todo!() }
+    fn render_commit(&mut self, area: Rect, but: &mut Buffer) { 
+                let full_commit = Paragraph::new(Text::from("Full Commit:"))
+            .block(Block::default().borders(Borders::ALL).title("Composed Commit"));
+     }
 }
 
 impl Widget for &mut App {

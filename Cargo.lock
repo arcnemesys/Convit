@@ -137,9 +137,7 @@ dependencies = [
  "crossterm",
  "ratatui",
  "serde",
- "serde_json",
  "thiserror",
- "tui-textarea",
 ]
 
 [[package]]
@@ -438,17 +436,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_json"
-version = "1.0.117"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "455182ea6142b14f93f4bc5320a2b31c1f266b66a4a5c858b013302a5d8cbfc3"
-dependencies = [
- "itoa",
- "ryu",
- "serde",
-]
-
-[[package]]
 name = "sharded-slab"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -611,17 +598,6 @@ dependencies = [
  "sharded-slab",
  "thread_local",
  "tracing-core",
-]
-
-[[package]]
-name = "tui-textarea"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3e38ced1f941a9cfc923fbf2fe6858443c42cc5220bfd35bdd3648371e7bd8e"
-dependencies = [
- "crossterm",
- "ratatui",
- "unicode-width",
 ]
 
 [[package]]
